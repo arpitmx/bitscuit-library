@@ -22,15 +22,27 @@
         android:id="@+id/ncsdesc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="5dp"
+        android:layout_marginBottom="10dp"
         android:fontFamily="@font/psemibold"
         android:text="New Update Available"
-        android:textAlignment="center"
+        android:gravity="center"
         android:paddingStart="10dp"
         android:textColor="#DD000000"
-        android:textSize="22dp"
+        android:textSize="23dp"
 
         />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:layout_marginBottom="5dp"
+        >
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        >
 
     <TextView
         android:id="@+id/versionTxt"
@@ -46,7 +58,7 @@
         android:layout_marginEnd="10dp"
         android:background="@drawable/button_white_curved"
         android:textColor="#DC000000"
-        android:textSize="16dp"
+        android:textSize="18dp"
 
         />
 
@@ -56,11 +68,13 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="25dp"
         android:fontFamily="@font/pmedium"
-        android:text="
-* Use special camera effects to bring your video to life, including background music, face filters, &amp; stickers
+        android:text="Change logs :\n\n* Use special camera effects to bring your video to life, including background music, face filters, &amp; stickers
 \n* Upload your creative video clips and get discovered on Explore
 \n* Explore millions of videos
 \n* Watch &amp; share any Instagram Reels video with your friends
+\n* Upload your creative video clips and get discovered on Explore
+\n* Explore millions of videos
+
 "
         android:minHeight="50dp"
         android:gravity="center_vertical"
@@ -68,11 +82,9 @@
         android:layout_margin="10dp"
         android:background="@drawable/button_white_curved"
         android:textColor="#DC000000"
-        android:textSize="16dp"
+        android:textSize="18dp"
 
         tools:ignore="HardcodedText" />
-
-
         />
 
     <ProgressBar
@@ -88,10 +100,14 @@
       />
 
 
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+    </ScrollView>
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnUpdate"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/btn_height"
+        android:layout_height  = "54dp"
         android:layout_marginStart="25dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="25dp"
@@ -99,7 +115,7 @@
         android:background="@drawable/button_pressed"
         android:drawableTint="@color/white"
         android:elevation="5dp"
-        android:fontFamily="@font/pregular"
+        android:fontFamily="@font/pmedium"
         android:paddingStart="20dp"
         android:gravity="center"
         android:paddingTop="5dp"
@@ -109,7 +125,5 @@
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="22dp"
-       />
-
-
+        />
 </androidx.appcompat.widget.LinearLayoutCompat>
