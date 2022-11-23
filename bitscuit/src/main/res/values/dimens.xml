@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="imgheight">35dp</dimen>
+    <dimen name="margin_top_10">20dp</dimen>
+    <dimen name="btn_height">52dp</dimen>
+    <dimen name="fontsize_form">22dp</dimen>
+    <dimen name="edit_form_height">70dp</dimen>
+    <dimen name="action_bar_height">60dp</dimen>
+    <dimen name="radioMargin">5dp</dimen>
+    <dimen name="minHeight_radio">65dp</dimen>
+</resources>
