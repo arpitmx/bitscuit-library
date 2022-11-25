@@ -1,21 +1,21 @@
 package com.bitpolarity.bitscuit
 
+import android.Manifest.permission.*
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
-import android.util.Log
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import com.bitpolarity.bitscuit.databinding.UpdateBottomsheetBinding
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import java.io.IOException
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.Build.VERSION
+import android.os.Bundle
+import android.provider.Settings
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 
 class Bitscuit private constructor(){
 
     private lateinit var context : Activity
-    private lateinit var updateBottomSheet : BottomSheetDialog
 
 
      companion object{
@@ -34,67 +34,64 @@ class Bitscuit private constructor(){
             }
      }
 
-    //BottomSheetViews
-    lateinit var versionTxt : TextView
-    lateinit var changeLog  : TextView
-    lateinit var updateBtn  : Button
-    lateinit var bindingBottomSheet : UpdateBottomsheetBinding
+
     val TAG : String = "Bitscuit.kt"
 
-    fun init(context: Activity) {
+    private lateinit var appID: String
+
+
+    fun init(context: Activity, appID : String) {
         this.context = context
-        init_updateBottomSheet()
-    }
-
-    private fun init_updateBottomSheet(){
-
-        updateBottomSheet = BottomSheetDialog(context)
-        bindingBottomSheet = UpdateBottomsheetBinding.inflate(context.layoutInflater)
-        updateBottomSheet.setContentView(bindingBottomSheet.root)
-        updateBottomSheet.setCancelable(false)
-        updateBottomSheet.dismissWithAnimation= true
-
-         versionTxt = bindingBottomSheet.versionTxt
-         changeLog = bindingBottomSheet.changeLogText
-         updateBtn = bindingBottomSheet.btnUpdate
-
+        this.appID = appID
+        checkPermissions()
     }
 
 
-    @kotlin.jvm.Throws(IOException::class)
-    private fun validate():Boolean{
-        if (updateBottomSheet != null){
-            return true
-        } else {
-            Toast.makeText(context, "Init the library with context first", Toast.LENGTH_SHORT).show()
-            throw IOException("UnInitialized")
+    fun checkPermissions(){
+
+        // Installing packages
+        if (VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            if (!context.packageManager.canRequestPackageInstalls()){
+                context.startActivityForResult(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                    .setData(Uri.parse(String.format("package: %s", context.packageName))),1)
+            }
+        }
+
+        // Storage permissions
+        if (ContextCompat.checkSelfPermission(context, READ_EXTERNAL_STORAGE)!=
+                PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(context,
+                arrayOf(WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE),1)
+        }
+
+        if (ContextCompat.checkSelfPermission(context, WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+
+            ActivityCompat.requestPermissions(context, arrayOf(WRITE_EXTERNAL_STORAGE), 1)
 
         }
+
     }
 
-    fun checkUpdate(isUpdateAvailable: Boolean, url : String?) {
+    fun update(isUpdateAvailable: Boolean, url : String?, version : String? , changeLogs: String? ) {
 
-        if (validate()){
+
 
             if (isUpdateAvailable){
-                    updateBottomSheet.show()
-                    updateBtn.setOnClickListener{
-                        context.startActivity(Intent(context,DownloadManagerActivity::class.java))
-                    }
+                        val downloadIntent = Intent(context, DownloadManagerActivity::class.java)
+                        downloadIntent.putExtra("updateUrl",url)
+                        downloadIntent.putExtra("version",version)
+                        downloadIntent.putExtra("logs",changeLogs)
+                        downloadIntent.putExtra("appID",appID)
+                        context.startActivity(downloadIntent)
             }
 
-        }else{
-            Log.e(TAG, "checkUpdate: Errors")
+
         }
 
     }
 
-    fun dismissBottomSheet(){
-        updateBottomSheet.dismiss()
-    }
 
 
 
 
 
-}

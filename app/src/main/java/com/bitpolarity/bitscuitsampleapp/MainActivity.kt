@@ -1,14 +1,10 @@
 package com.bitpolarity.bitscuitsampleapp
 
-import android.content.ContentValues.TAG
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import androidx.lifecycle.ViewModelProvider
 import com.bitpolarity.bitscuit.Bitscuit
 import com.bitpolarity.bitscuitsampleapp.databinding.ActivityMainBinding
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,10 +17,20 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val changeLog = "Use special camera effects to bring your video to life, including background music, face filters, &; stickers\n" +
+                "\n* Upload your creative video clips and get discovered on Explore\n" +
+                "\n* Explore millions of videos\n" +
+                "\n* Watch &amp; share any Instagram Reels video with your friends\n" +
+                "\n* Upload your creative video clips and get discovered on Explore\n" +
+                "\n* Explore millions of videos"
+
+
+        var url = "https://firebasestorage.googleapis.com/v0/b/quizr-59d14.appspot.com/o/quizr.apk?alt=media&token=69cbc9db-77be-4544-88fb-430da1b6c345"
         model = ViewModelProvider(this)[MainActivityViewModel::class.java]
         bitscuit = Bitscuit.getInstance()
-        bitscuit.init(this)
-        bitscuit.checkUpdate(true,"www.google.com")
+        bitscuit.init(this, BuildConfig.APPLICATION_ID)
+
+        bitscuit.update(true,url,"1.0.0",changeLog)
 
 
 
@@ -33,8 +39,5 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    override fun finish() {
-        super.finish()
-        bitscuit.dismissBottomSheet()
-    }
+
 }

@@ -4,10 +4,11 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
+    android:id="@+id/layout_lin"
     android:gravity="center">
 
     <ProgressBar
-        android:id="@+id/progressBarHorizontal"
+        android:id="@+id/downloadProgress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,17 +18,18 @@
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:minWidth="200dp"
-        android:progress="1"
+        android:progress="0"
         android:layout_marginBottom="10dp"
         android:progressBackgroundTint="@android:color/darker_gray"
         android:progressTint="@color/light_blue_600" />
 
 
     <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
+        android:id="@+id/loaderText"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Loading 10%"
+        android:text="Initiating..."
+        android:gravity="center"
         android:fontFamily="@font/pmedium"
         android:textSize="20dp"
         />
