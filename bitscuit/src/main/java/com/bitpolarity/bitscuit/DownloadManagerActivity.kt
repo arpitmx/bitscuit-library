@@ -1,13 +1,18 @@
 package com.bitpolarity.bitscuit
 
 import android.Manifest
+import android.app.Activity
+import android.app.PendingIntent
 import android.content.Intent
+import android.content.IntentSender
+import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -21,6 +26,7 @@ import androidx.core.content.FileProvider
 import com.bitpolarity.bitscuit.databinding.ActivityDownloadManagerBinding
 import com.bitpolarity.bitscuit.databinding.FragmentDownloaderBinding
 import com.bitpolarity.bitscuit.databinding.UpdateBottomsheetBinding
+import com.bitpolarity.bitscuit.model.UpdateItem
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.reactivex.BackpressureStrategy
@@ -30,7 +36,10 @@ import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 import okhttp3.OkHttpClient
 import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.WritableByteChannel
 import java.util.concurrent.TimeUnit
 
 class DownloadManagerActivity : AppCompatActivity() {
@@ -47,10 +56,7 @@ class DownloadManagerActivity : AppCompatActivity() {
     val TAG : String = "DownloadManagerActivity.kt"
 
 
-    lateinit var version: String
-    private lateinit var changeLogTxt: String
-    private lateinit var appID: String
-    lateinit var url: String
+    lateinit var updateItem: UpdateItem
     lateinit var bindingInclude : FragmentDownloaderBinding
 
 
@@ -77,7 +83,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         val bundle = intent.extras
         if (bundle!=null){
             initData(bundle)
-            init_updateBottomSheet()
+            init_updateBottomSheet(updateItem)
         }
 
         RxJavaPlugins.setErrorHandler {
@@ -86,18 +92,21 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     }
 
-    fun startDownload(URL:String, appID: String){
-        val targetFile = File(cacheDir  ,FILE_NAME)
-         Toast.makeText(this, "Exists ?: ${targetFile.exists() } + \n ${targetFile.name}", Toast.LENGTH_SHORT).show()
+    lateinit var targetFile : File
+    fun startDownload(updateItem : UpdateItem){
+
+        val filepath = "${updateItem.versionCode}/${FILE_NAME}"
+        targetFile = File(cacheDir , FILE_NAME)
+
+       //  Toast.makeText(this, "Exists ?: ${targetFile.exists() } + \n ${targetFile.name}", Toast.LENGTH_SHORT).show()
 
         if (targetFile.exists()){
             targetFile.delete()
-            Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
-
+         //   Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
         }
 
 
-        disposable = fileDownloader.download(URL, targetFile)
+        disposable = fileDownloader.download(updateItem.updateUrl, targetFile)
             .throttleFirst(2, TimeUnit.SECONDS)
             .toFlowable(BackpressureStrategy.LATEST)
             .subscribeOn(Schedulers.io())
@@ -115,17 +124,89 @@ class DownloadManagerActivity : AppCompatActivity() {
                 bindingInclude.downloadProgress.progress  =100
                 Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
                 bindingInclude.loaderText.text = "Downloaded\n\nSaved at : ${targetFile.absolutePath} \n Installing now..."
-                installAPK(targetFile.absolutePath, appID)
+                installAPK(targetFile.absolutePath, updateItem.appID)
             })
 
     }
 
+
+    val callback = object : PackageInstaller.SessionCallback() {
+        override fun onCreated(sessionId: Int) {
+            // The session has been created
+            Log.d("TAG","session created with sessionId: $sessionId")
+        }
+
+        override fun onBadgingChanged(sessionId: Int) {
+            // The session's badging has changed
+            Log.d("TAG","session badging changed with sessionId: $sessionId")
+        }
+
+        override fun onActiveChanged(sessionId: Int, active: Boolean) {
+            // The session's active state has changed
+            Log.d("TAG","session active state changed with sessionId: $sessionId and active: $active")
+        }
+
+        override fun onProgressChanged(sessionId: Int, progress: Float) {
+            // The session's progress has changed
+            Log.d("TAG","session progress changed with sessionId: $sessionId and progress: $progress")
+        }
+
+        override fun onFinished(sessionId: Int, success: Boolean) {
+            // The session has been finished
+            if(success) {
+                Toast.makeText(applicationContext,"Done",Toast.LENGTH_SHORT).show()
+                Log.d("TAG","installation was successful for sessionId: $sessionId")
+            } else {
+                Toast.makeText(applicationContext,"Failed",Toast.LENGTH_SHORT).show()
+
+                Log.d("TAG","installation failed for sessionId: $sessionId")
+            }
+        }
+    }
+
+
+    val REQUEST_INSTALL_PACKAGE : Int = 100
+
     fun installAPK(PATH : String, appID: String) {
 
         dismissBottomSheet()
-
         val toInstall = File(PATH)
-        val intent: Intent
+
+//        val packageInstaller = this.packageManager.packageInstaller
+//        val sessionId = packageInstaller.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
+//        Log.d("TAG","Session ID : ${sessionId}")
+//        packageInstaller.registerSessionCallback(callback, Handler())
+
+
+ //       val intent = Intent()
+//
+//
+//
+//
+//        val packageUri = Uri.fromFile(toInstall)
+//        val packageInstaller = packageManager.packageInstaller
+//
+//        packageInstaller.registerSessionCallback(callback, Handler())
+//
+//        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+//        val sessionId = packageInstaller.createSession(params)
+//        val session = packageInstaller.openSession(sessionId)
+//        val out = session.openWrite("update.apk", 0, -1)
+//        val input = FileInputStream(toInstall).channel
+//        val buffer = ByteBuffer.allocate(1024)
+//        while (input.read(buffer) != -1) {
+//            buffer.flip()
+//            out.write(buffer.array(), buffer.position(), buffer.remaining())
+//            buffer.clear()
+//        }
+//        session.fsync(out)
+//        input.close()
+//        out.close()
+//
+//        val pendingIntent = PendingIntent.getBroadcast(applicationContext, sessionId, intent, PendingIntent.FLAG_IMMUTABLE)
+//        session.commit(pendingIntent.intentSender)
+
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val apkUri = FileProvider.getUriForFile(
@@ -134,7 +215,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 toInstall
             )
 
-            intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
+            intent = Intent(Intent.ACTION_VIEW)
             intent.data = apkUri
             intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
@@ -147,19 +228,55 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         }
 
-        startActivity(intent)
+        startActivityForResult(intent,REQUEST_INSTALL_PACKAGE)
     }
 
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_INSTALL_PACKAGE) {
+
+        if (resultCode == RESULT_CANCELED) {
+            Toast.makeText(getApplicationContext(), "Update canceled by user! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+            showFailedUpdate()
+        } else if (resultCode == RESULT_OK) {
+            Toast.makeText(getApplicationContext(),"Update success! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(getApplicationContext(), "Update Failed! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+            showFailedUpdate()
+        }
+    }
+    }
+
+    fun setBottomSheetViewDefault(){
+
+    }
+
+    fun showFailedUpdate(){
+        updateBottomSheet.show()
+        bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
+        bindingBottomSheet.ncsdesc.text = "Updation failed"
+        bindingBottomSheet.btnUpdate.text = "Retry"
+        bindingBottomSheet.btnUpdate.visibility = View.VISIBLE
+        bindingBottomSheet.include.downloadProgress.progress = 0
+        bindingBottomSheet.btnUpdate.setOnClickListener {
+            startDownload(updateItem)
+        }
+
+    }
 
     fun initData(bundle: Bundle){
-        version = bundle.getString("version","err")
-        url = bundle.getString("updateUrl","err")
-        changeLogTxt = bundle.getString("logs","err")
-        appID = bundle.getString("appID","err")
+       val version = bundle.getString("version","err")
+       val url = bundle.getString("updateUrl","err")
+       val changeLogTxt = bundle.getString("logs","err")
+       val appID = bundle.getString("appID","err")
+
+       this.updateItem = UpdateItem(version,url,changeLogTxt,appID)
     }
 
 
-    private fun init_updateBottomSheet(){
+    private fun init_updateBottomSheet(updateItem: UpdateItem){
 
 
         bindingBottomSheet = UpdateBottomsheetBinding.inflate(layoutInflater)
@@ -183,8 +300,8 @@ class DownloadManagerActivity : AppCompatActivity() {
         updateBtn.visibility = View.VISIBLE
         bindingInclude.layoutLin.visibility = View.GONE
 
-        versionTxt.text = version
-        changeLog.text = changeLogTxt
+        versionTxt.text = updateItem.versionCode
+        changeLog.text = updateItem.logs
 
 
         updateBtn.setOnClickListener{
@@ -192,16 +309,13 @@ class DownloadManagerActivity : AppCompatActivity() {
             updateBtn.visibility = View.GONE
             bindingInclude.layoutLin.visibility = View.VISIBLE
 
-            initFrag()
+            startDownload(updateItem)
 
         }
         updateBottomSheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         updateBottomSheet.show()
     }
 
-    fun initFrag(){
-       startDownload(url, appID)
-    }
 
     fun dismissBottomSheet(){
         updateBottomSheet.dismiss()

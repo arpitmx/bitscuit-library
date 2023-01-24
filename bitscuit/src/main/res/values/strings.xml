@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">BitscuitLibApp</string>
+    <string name="update_failed_text">You cancelled the update.</string>
+    <string name="something_went_wrong_text">Something went wrong</string>
 </resources>
