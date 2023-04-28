@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         bitscuit = Bitscuit.getInstance()
         bitscuit.init(this, BuildConfig.APPLICATION_ID)
 
-        bitscuit.update(true,testUrl1MB,"1.0.0",changeLog)
+        bitscuit.update(true,testUrl8MB,"1.0.0",changeLog)
 
 
 

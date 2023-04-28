@@ -41,37 +41,35 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.WritableByteChannel
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 class DownloadManagerActivity : AppCompatActivity() {
 
-    lateinit var binding : ActivityDownloadManagerBinding
-    private lateinit var updateBottomSheet : BottomSheetDialog
+    private lateinit var binding: ActivityDownloadManagerBinding
+    private lateinit var updateBottomSheet: BottomSheetDialog
 
-    //BottomSheetViews
-    lateinit var versionTxt : TextView
-    lateinit var changeLog  : TextView
-    lateinit var updateBtn  : Button
-    lateinit var scrollView : ScrollView
-    lateinit var bindingBottomSheet : UpdateBottomsheetBinding
-    val TAG : String = "DownloadManagerActivity.kt"
+    // Bottom Sheet Views
+    private lateinit var versionTxt: TextView
+    private lateinit var changeLog: TextView
+    private lateinit var updateBtn: Button
+    private lateinit var scrollView: ScrollView
+    private lateinit var bindingBottomSheet: UpdateBottomsheetBinding
 
-
-    lateinit var updateItem: UpdateItem
-    lateinit var bindingInclude : FragmentDownloaderBinding
-
+    private lateinit var updateItem: UpdateItem
+    private lateinit var bindingInclude: FragmentDownloaderBinding
 
     companion object {
         private const val FILE_NAME = "update.apk"
+        private const val REQUEST_INSTALL_PACKAGE = 1001
+        private const val TAG = "DebugLog100"
+
     }
 
     private var disposable = Disposables.disposed()
 
     private val fileDownloader by lazy {
-        FileDownloader(
-            OkHttpClient.Builder().build()
-        )
+        FileDownloader(OkHttpClient.Builder().build())
     }
-
 
 
 
@@ -93,16 +91,31 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
     lateinit var targetFile : File
+
+    private fun setDownloadingView(){
+        bindingBottomSheet.bottomTitle.text = "Downloading..."
+        bindingInclude.downloadProgress.visibility = View.VISIBLE
+        bindingInclude.layoutLin.visibility = View.VISIBLE
+
+
+        scrollView.visibility = View.GONE
+        updateBtn.visibility = View.GONE
+        bindingBottomSheet.btnUpdate.visibility = View.GONE
+
+
+    }
+
     fun startDownload(updateItem : UpdateItem){
 
         val filepath = "${updateItem.versionCode}/${FILE_NAME}"
         targetFile = File(cacheDir , FILE_NAME)
 
-       //  Toast.makeText(this, "Exists ?: ${targetFile.exists() } + \n ${targetFile.name}", Toast.LENGTH_SHORT).show()
+        Log.d(TAG, "Exists ?: ${targetFile.exists()} + \\n ${targetFile.name}")
 
         if (targetFile.exists()){
             targetFile.delete()
-         //   Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
+
+            Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
         }
 
 
@@ -113,12 +126,12 @@ class DownloadManagerActivity : AppCompatActivity() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
 
-                bindingInclude.downloadProgress.progress = it
-                bindingInclude.loaderText.text = "Downloading ${it}% done"
 
+                bindingInclude.downloadProgress.progress = it
+                bindingInclude.loaderText.visibility = View.VISIBLE
+                bindingInclude.loaderText.text = "Downloading ${it}% done"
                        }, {
                 Toast.makeText(this, it.localizedMessage, Toast.LENGTH_SHORT).show()
-
                           }, {
 
                 bindingInclude.downloadProgress.progress  =100
@@ -165,7 +178,6 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
 
-    val REQUEST_INSTALL_PACKAGE : Int = 100
 
     fun installAPK(PATH : String, appID: String) {
 
@@ -249,18 +261,17 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
     }
 
-    fun setBottomSheetViewDefault(){
-
-    }
-
     fun showFailedUpdate(){
         updateBottomSheet.show()
         bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
-        bindingBottomSheet.ncsdesc.text = "Updation failed"
+        bindingBottomSheet.bottomTitle.text = "Updation failed"
         bindingBottomSheet.btnUpdate.text = "Retry"
         bindingBottomSheet.btnUpdate.visibility = View.VISIBLE
+        bindingBottomSheet.btnUpdate.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
         bindingBottomSheet.include.downloadProgress.progress = 0
+        bindingBottomSheet.include.downloadProgress.visibility= View.GONE
         bindingBottomSheet.btnUpdate.setOnClickListener {
+            setDownloadingView()
             startDownload(updateItem)
         }
 
@@ -276,8 +287,18 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
 
-    private fun init_updateBottomSheet(updateItem: UpdateItem){
+    private fun setDetailBottomView(versionText : String, changeLogs : String){
+        scrollView.visibility = View.VISIBLE
+        updateBtn.visibility = View.VISIBLE
+        bindingInclude.layoutLin.visibility = View.GONE
+        bindingBottomSheet.btnUpdate.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_system_update_alt_24,0)
+        versionTxt.text = versionText
+        changeLog.text = changeLogs
 
+    }
+
+
+    private fun init_updateBottomSheet(updateItem: UpdateItem){
 
         bindingBottomSheet = UpdateBottomsheetBinding.inflate(layoutInflater)
         bindingInclude = bindingBottomSheet.include
@@ -292,28 +313,19 @@ class DownloadManagerActivity : AppCompatActivity() {
 
 
         versionTxt = bindingBottomSheet.versionTxt
-        changeLog = bindingBottomSheet.changeLogText
-        updateBtn = bindingBottomSheet.btnUpdate
+        changeLog =  bindingBottomSheet.changeLogText
+        updateBtn =  bindingBottomSheet.btnUpdate
         scrollView = bindingBottomSheet.scrollview
 
-        scrollView.visibility = View.VISIBLE
-        updateBtn.visibility = View.VISIBLE
-        bindingInclude.layoutLin.visibility = View.GONE
+        setDetailBottomView(updateItem.versionCode,updateItem.logs)
 
-        versionTxt.text = updateItem.versionCode
-        changeLog.text = updateItem.logs
-
-
-        updateBtn.setOnClickListener{
-            scrollView.visibility = View.GONE
-            updateBtn.visibility = View.GONE
-            bindingInclude.layoutLin.visibility = View.VISIBLE
-
-            startDownload(updateItem)
-
-        }
         updateBottomSheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         updateBottomSheet.show()
+
+        updateBtn.setOnClickListener{
+            setDownloadingView()
+            startDownload(updateItem)
+        }
     }
 
 

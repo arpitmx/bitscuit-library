@@ -21,10 +21,9 @@
 
 
     <TextView
-        android:id="@+id/ncsdesc"
+        android:id="@+id/bottomTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
         android:fontFamily="@font/psemibold"
         android:text="New Update Available"
         android:gravity="center"
@@ -38,7 +37,7 @@
     <include
         android:id="@+id/include"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
         android:visibility="visible"
         layout="@layout/fragment_downloader"
         />
@@ -104,11 +103,12 @@
         android:layout_marginStart="25dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="25dp"
-        android:layout_marginBottom="25dp"
+        android:layout_marginBottom="10dp"
         android:background="@drawable/button_pressed"
         android:drawableTint="@color/white"
         android:elevation="5dp"
         android:fontFamily="@font/pmedium"
+        android:drawablePadding="-20dp"
         android:paddingStart="20dp"
         android:gravity="center"
         android:paddingTop="5dp"

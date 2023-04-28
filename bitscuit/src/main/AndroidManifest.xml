@@ -12,7 +12,11 @@
         />
 
 
-    <application>
+    <application
+        android:name="BitscuitApp"
+
+
+        >
 
         <provider
             android:name="androidx.core.content.FileProvider"

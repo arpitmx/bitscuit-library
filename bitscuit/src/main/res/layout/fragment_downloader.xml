@@ -29,9 +29,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Initiating..."
+        android:layout_marginBottom="10dp"
         android:gravity="center"
+        android:textColor="#A9555555"
         android:fontFamily="@font/pmedium"
-        android:textSize="20dp"
+        android:textSize="15dp"
         />
 
 
