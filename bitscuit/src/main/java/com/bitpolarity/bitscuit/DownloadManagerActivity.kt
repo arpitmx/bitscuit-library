@@ -72,6 +72,15 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
 
+    /*
+
+    Todo :
+
+    1. Callbacks to check if user clicks on install or cancel in the options
+    2. Check if the apps is deleted or not when new one is being downloaded
+
+     */
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
