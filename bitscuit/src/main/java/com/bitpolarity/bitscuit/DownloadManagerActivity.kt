@@ -140,10 +140,19 @@ class DownloadManagerActivity : AppCompatActivity() {
 
                 bindingInclude.downloadProgress.progress  =100
                 bindingInclude.progressCircular.progress = 100
-                //Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
                 bindingInclude.loaderText.text = "Downloaded\n\nSaved at : ${targetFile.absolutePath} \n Installing now..."
                 installAPK(targetFile.absolutePath, updateItem.appID)
             })
+
+
+        bindingInclude.cancelButton.setOnClickListener{
+            disposable.dispose()
+            targetFile.delete()
+            dismissBottomSheet()
+            showFailedUpdate("Update cancelled...")
+
+        }
 
     }
 
@@ -185,13 +194,13 @@ class DownloadManagerActivity : AppCompatActivity() {
         if (requestCode == REQUEST_INSTALL_PACKAGE) {
 
         if (resultCode == RESULT_CANCELED) {
-            Toast.makeText(getApplicationContext(), "Update canceled by user! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate()
+          //  Toast.makeText(getApplicationContext(), "Update canceled by user! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+            showFailedUpdate("Update cancelled...")
         } else if (resultCode == RESULT_OK) {
-            Toast.makeText(getApplicationContext(),"Update success! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+           // Toast.makeText(getApplicationContext(),"Update success! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(getApplicationContext(), "Update Failed! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate()
+           // Toast.makeText(getApplicationContext(), "Update Failed! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+            showFailedUpdate("Update failed...")
         }
     }
     }
@@ -234,16 +243,17 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     }
 
-    fun showFailedUpdate(){
+    fun showFailedUpdate(msg:String){
         updateBottomSheet.show()
         bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
-        bindingBottomSheet.bottomTitle.text = "Updation failed"
+        bindingBottomSheet.bottomTitle.text = msg
 
         with(bindingBottomSheet.btnUpdate){
             text = "Retry"
             visibility = View.VISIBLE
             setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
             setOnClickListener {
+                dismissBottomSheet()
                 setDownloadingView()
                 startDownload(updateItem)
             }
@@ -256,14 +266,19 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
 
-    private fun setDownloadingView(){
-        bindingBottomSheet.bottomTitle.text = "Downloading..."
+    fun showBottomSheet(){
+        dismissBottomSheet()
+        updateBottomSheet.show()
+    }
 
+    private fun setDownloadingView(){
+        showBottomSheet()
+        bindingBottomSheet.bottomTitle.text = "Downloading..."
         bindingInclude.loaderText.text = "Initializing..."
         bindingInclude.loaderText.visibility = View.VISIBLE
 
-
         bindingInclude.progressLayout.visibility = View.VISIBLE
+
         with(bindingInclude.progressCircular){
             isIndeterminate = false
             progress = 0
@@ -305,6 +320,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         updateBottomSheet.show()
 
         updateBtn.setOnClickListener{
+
             setDownloadingView()
             startDownload(updateItem)
         }
@@ -312,6 +328,8 @@ class DownloadManagerActivity : AppCompatActivity() {
 
 
     fun dismissBottomSheet(){
+
+        updateBottomSheet.dismissWithAnimation = true
         updateBottomSheet.dismiss()
     }
 
