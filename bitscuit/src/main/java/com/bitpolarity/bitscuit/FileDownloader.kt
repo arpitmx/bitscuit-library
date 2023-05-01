@@ -12,7 +12,7 @@ class FileDownloader(okHttpClient: OkHttpClient) {
 
     companion object {
         private const val BUFFER_LENGTH_BYTES = 1024 * 64
-        private const val HTTP_TIMEOUT = 30
+        private const val HTTP_TIMEOUT = 30L
     }
 
     private var okHttpClient: OkHttpClient
@@ -25,34 +25,38 @@ class FileDownloader(okHttpClient: OkHttpClient) {
     }
 
     fun download(url: String, file: File): Observable<Int> {
-        return Observable.create<Int> { emitter ->
+        return Observable.create { emitter ->
             val request = Request.Builder().url(url).build()
             val response = okHttpClient.newCall(request).execute()
             val body = response.body
-            val responseCode = response.code
-            if (responseCode >= HttpURLConnection.HTTP_OK &&
-                responseCode < HttpURLConnection.HTTP_MULT_CHOICE &&
-                body != null) {
-                val length = body.contentLength()
-                body.byteStream().apply {
-                    file.outputStream().use { fileOut ->
-                        var bytesCopied : Long = 0
-                        val buffer = ByteArray(BUFFER_LENGTH_BYTES)
-                        var bytes = read(buffer)
-                        while (bytes >= 0) {
-                            fileOut.write(buffer, 0, bytes)
-                            bytesCopied += bytes
-                            bytes = read(buffer)
-                            if (length > 0) {
-                                emitter.onNext((( bytesCopied * 100)/length).toInt())
-                                Log.d("FileDownloader", "Emitter: Progress : ${((bytesCopied * 100)/length)} \nBytesCopied : $bytesCopied")
+            when {
+                response.code !in HttpURLConnection.HTTP_OK until HttpURLConnection.HTTP_MULT_CHOICE -> {
+                    throw IllegalArgumentException("Error occurred when do http get $url")
+                }
+                body == null -> {
+                    throw IllegalArgumentException("Response body is null")
+                }
+                else -> {
+                    val length = body.contentLength()
+                    body.byteStream().use { inputStream ->
+                        file.outputStream().use { outputStream ->
+                            val buffer = ByteArray(BUFFER_LENGTH_BYTES)
+                            var bytesRead = inputStream.read(buffer)
+                            var bytesCopied = 0L
+                            while (bytesRead >= 0) {
+                                outputStream.write(buffer, 0, bytesRead)
+                                bytesCopied += bytesRead
+                                if (length > 0) {
+                                    val progress = ((bytesCopied * 100) / length).toInt()
+                                    emitter.onNext(progress)
+                                    Log.d("FileDownloader", "Progress: $progress")
+                                }
+                                bytesRead = inputStream.read(buffer)
                             }
                         }
                     }
                     emitter.onComplete()
                 }
-            } else {
-                throw IllegalArgumentException("Error occurred when do http get $url")
             }
         }
     }

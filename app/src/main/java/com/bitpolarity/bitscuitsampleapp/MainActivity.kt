@@ -34,11 +34,11 @@ class MainActivity : AppCompatActivity() {
         model = ViewModelProvider(this)[MainActivityViewModel::class.java]
         bitscuit = Bitscuit.BitscuitBuilder()
                     .scope(this, appID = BuildConfig.APPLICATION_ID)
-                    .config(true,testUrl28MB,"1.0.0",changeLog)
+                    .config(testUrl15MB,"1.0.1",changeLog)
                     .build()
 
         binding.button.setOnClickListener{
-            bitscuit.update()
+            bitscuit.listenUpdate()
         }
 
 

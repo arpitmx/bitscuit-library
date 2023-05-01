@@ -90,8 +90,6 @@ class DownloadManagerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
-
-
         val bundle = intent.extras
         if (bundle!=null){
             initData(bundle)
@@ -106,27 +104,7 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     lateinit var targetFile : File
 
-    private fun setDownloadingView(){
-        bindingBottomSheet.bottomTitle.text = "Downloading..."
 
-        bindingInclude.loaderText.text = "Initializing..."
-        bindingInclude.loaderText.visibility = View.VISIBLE
-
-
-        bindingInclude.downloadProgress.visibility = View.VISIBLE
-        with(bindingInclude.progressCircular){
-            isIndeterminate = false
-            progress = 0
-            max = 100
-        }
-
-        bindingInclude.layoutLin.visibility = View.VISIBLE
-        scrollView.visibility = View.GONE
-        updateBtn.visibility = View.GONE
-        bindingBottomSheet.btnUpdate.visibility = View.GONE
-
-
-    }
 
     @SuppressLint("LongLogTag")
     fun startDownload(updateItem : UpdateItem){
@@ -151,13 +129,11 @@ class DownloadManagerActivity : AppCompatActivity() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
 
-                Handler().postDelayed({
                     bindingInclude.progressCircular.progress = it
                     bindingInclude.downloadProgress.progress = it
                     bindingInclude.loaderText.text = "${it}% done"
                     Log.d(TAG, "startDownload: $it %done")
 
-                                      },50)
                        }, {
                 Toast.makeText(this, it.localizedMessage, Toast.LENGTH_SHORT).show()
                           }, {
@@ -220,28 +196,13 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
     }
 
-    fun showFailedUpdate(){
-        updateBottomSheet.show()
-        bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
-        bindingBottomSheet.bottomTitle.text = "Updation failed"
-        bindingBottomSheet.btnUpdate.text = "Retry"
-        bindingBottomSheet.btnUpdate.visibility = View.VISIBLE
-        bindingBottomSheet.btnUpdate.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
-        bindingBottomSheet.include.downloadProgress.progress = 0
-        bindingBottomSheet.include.downloadProgress.visibility= View.GONE
-        bindingBottomSheet.btnUpdate.setOnClickListener {
-            setDownloadingView()
-            startDownload(updateItem)
-        }
 
-    }
 
     fun initData(bundle: Bundle){
        val version = bundle.getString("version","err")
        val url = bundle.getString("updateUrl","err")
        val changeLogTxt = bundle.getString("logs","err")
        val appID = bundle.getString("appID","err")
-
         this.appID = appID
         Log.d(TAG, "initData: \n URL :$url \n Version : $version \n ChangeLog : $changeLogTxt \n AppID : $appID")
         
@@ -273,6 +234,50 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     }
 
+    fun showFailedUpdate(){
+        updateBottomSheet.show()
+        bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
+        bindingBottomSheet.bottomTitle.text = "Updation failed"
+
+        with(bindingBottomSheet.btnUpdate){
+            text = "Retry"
+            visibility = View.VISIBLE
+            setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
+            setOnClickListener {
+                setDownloadingView()
+                startDownload(updateItem)
+            }
+        }
+
+        with(bindingInclude.progressLayout){
+            bindingBottomSheet.include.downloadProgress.progress = 0
+            visibility = View.GONE
+        }
+    }
+
+
+    private fun setDownloadingView(){
+        bindingBottomSheet.bottomTitle.text = "Downloading..."
+
+        bindingInclude.loaderText.text = "Initializing..."
+        bindingInclude.loaderText.visibility = View.VISIBLE
+
+
+        bindingInclude.progressLayout.visibility = View.VISIBLE
+        with(bindingInclude.progressCircular){
+            isIndeterminate = false
+            progress = 0
+            max = 100
+        }
+
+        bindingInclude.layoutLin.visibility = View.VISIBLE
+
+
+        scrollView.visibility = View.GONE
+        updateBtn.visibility = View.GONE
+        bindingBottomSheet.btnUpdate.visibility = View.GONE
+
+    }
 
     private fun init_updateBottomSheet(updateItem: UpdateItem){
 

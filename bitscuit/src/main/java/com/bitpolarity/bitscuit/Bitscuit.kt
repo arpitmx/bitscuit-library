@@ -1,30 +1,25 @@
 package com.bitpolarity.bitscuit
 
-import android.Manifest.permission.*
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.app.Activity
-import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.Build.TAGS
 import android.os.Build.VERSION
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.lang.RuntimeException
 import java.lang.ref.WeakReference
-import java.util.logging.Logger
 import kotlin.properties.Delegates
 
 
 class Bitscuit private constructor(
-   val isUpdateAvailable: Boolean,
    val url: String,
-   val version: String,
+   val updateVersion: String,
    val changeLogs: String,
    val activityRef: WeakReference<Activity>,
    val appID: String
@@ -39,22 +34,57 @@ class Bitscuit private constructor(
 //    private lateinit var changeLogs: String
 
 
+    fun versionCompare(v1: String, v2: String): Int {
+        var vnum1 = 0
+        var vnum2 = 0
+        var i = 0
+        var j = 0
+        while (i < v1.length
+            || j < v2.length
+        ) {
+            while (i < v1.length
+                && v1[i] != '.'
+            ) {
+                vnum1 = (vnum1 * 10
+                        + (v1[i].code - '0'.code))
+                i++
+            }
+            while (j < v2.length
+                && v2[j] != '.'
+            ) {
+                vnum2 = (vnum2 * 10 + (v2[j].code - '0'.code))
+                j++
+            }
+            if (vnum1 > vnum2) return 1
+            if (vnum2 > vnum1) return -1
+            vnum2 = 0
+            vnum1 = vnum2
+            i++
+            j++
+        }
+        return 0
+    }
 
 
-    fun update(){
+    fun listenUpdate(){
         val activity : Activity? = activityRef.get()
 
         if (activity!=null) {
             val downloadIntent = Intent(activity, DownloadManagerActivity::class.java)
+            val currentVersionCode = activity.packageManager.getPackageInfo(appID, 0).versionName
 
-            if (isUpdateAvailable) {
+            val updateAvailable = versionCompare(currentVersionCode,updateVersion)
+
+            if (updateAvailable<0) {
                 downloadIntent.putExtra("updateUrl", url)
-                downloadIntent.putExtra("version", version)
+                downloadIntent.putExtra("version", updateVersion)
                 downloadIntent.putExtra("logs", changeLogs)
                 downloadIntent.putExtra("appID", appID)
-            }
-            activity.startActivity(downloadIntent)
+                activity.startActivity(downloadIntent)
 
+            }else {
+                Toast.makeText(activity, "This is the latest version", Toast.LENGTH_SHORT).show()
+            }
         }else {
             Log.d(TAG, "Activity context is null")
         }
@@ -65,10 +95,10 @@ class Bitscuit private constructor(
         @Volatile
         private lateinit var instance : Bitscuit
 
-         fun getInstance(isUpdateAvailable: Boolean, url : String, version : String , changeLogs: String , activityRef: WeakReference<Activity>, appID: String): Bitscuit {
+         fun getInstance( url : String, version : String , changeLogs: String , activityRef: WeakReference<Activity>, appID: String): Bitscuit {
              synchronized(this) {
                  if (!::instance.isInitialized) {
-                     instance = Bitscuit(isUpdateAvailable,url,version,changeLogs,activityRef,appID)
+                     instance = Bitscuit(url,version,changeLogs,activityRef,appID)
                  }
 
              }
@@ -96,9 +126,8 @@ class Bitscuit private constructor(
 
 
 
-        fun config(isUpdateAvailable: Boolean, url : String, version : String , changeLogs: String ) =
+        fun config( url : String, version : String , changeLogs: String ) =
             apply {
-                this.isUpdateAvailable = isUpdateAvailable
                 this.url = url
                 this.version = version
                 this.changeLogs = changeLogs
@@ -107,7 +136,7 @@ class Bitscuit private constructor(
 
 
         fun build() : Bitscuit{
-            return getInstance(isUpdateAvailable, url, version, changeLogs, acitivityRef, appID)
+            return getInstance(url, version, changeLogs, acitivityRef, appID)
         }
         fun checkPermissions() {
 
