@@ -1,5 +1,6 @@
 package com.bitpolarity.bitscuit
 
+import android.util.Log
 import io.reactivex.Observable
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -10,7 +11,7 @@ import java.util.concurrent.TimeUnit
 class FileDownloader(okHttpClient: OkHttpClient) {
 
     companion object {
-        private const val BUFFER_LENGTH_BYTES = 1024 * 8
+        private const val BUFFER_LENGTH_BYTES = 1024 * 64
         private const val HTTP_TIMEOUT = 30
     }
 
@@ -35,14 +36,17 @@ class FileDownloader(okHttpClient: OkHttpClient) {
                 val length = body.contentLength()
                 body.byteStream().apply {
                     file.outputStream().use { fileOut ->
-                        var bytesCopied = 0
+                        var bytesCopied : Long = 0
                         val buffer = ByteArray(BUFFER_LENGTH_BYTES)
                         var bytes = read(buffer)
                         while (bytes >= 0) {
                             fileOut.write(buffer, 0, bytes)
                             bytesCopied += bytes
                             bytes = read(buffer)
-                            emitter.onNext(((bytesCopied * 100)/length).toInt())
+                            if (length > 0) {
+                                emitter.onNext((( bytesCopied * 100)/length).toInt())
+                                Log.d("FileDownloader", "Emitter: Progress : ${((bytesCopied * 100)/length)} \nBytesCopied : $bytesCopied")
+                            }
                         }
                     }
                     emitter.onComplete()
@@ -52,4 +56,5 @@ class FileDownloader(okHttpClient: OkHttpClient) {
             }
         }
     }
+
 }

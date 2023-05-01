@@ -7,29 +7,89 @@
     android:id="@+id/layout_lin"
     android:gravity="center">
 
-    <ProgressBar
-        android:id="@+id/downloadProgress"
-        style="?android:attr/progressBarStyleHorizontal"
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/layoutLinearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:indeterminate="false"
-        android:max="100"
-        android:minHeight="50dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
-        android:minWidth="200dp"
-        android:progress="0"
-        android:layout_marginBottom="10dp"
-        android:progressBackgroundTint="@android:color/darker_gray"
-        android:progressTint="@color/light_blue_600" />
+        android:padding="5dp"
+        android:weightSum="10">
 
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="50dp"
+            android:layout_height="50dp">
+
+
+
+
+            <ProgressBar
+                android:id="@+id/progress_circular"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:foregroundGravity="center"
+                android:indeterminate="false"
+                android:progressDrawable="@drawable/progress_drawable"
+                android:progress="0"
+                android:max="100"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
+
+
+            <ImageView
+                android:id="@+id/appIcon"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_gravity="center"
+                android:contentDescription="appIcon"
+                android:src="@drawable/baseline_hive_24"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <ProgressBar
+            android:id="@+id/downloadProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="5dp"
+            android:layout_weight="9.8"
+            android:indeterminate="false"
+            android:max="100"
+            android:minWidth="200dp"
+            android:minHeight="50dp"
+            android:progress="0"
+            android:progressBackgroundTint="@android:color/darker_gray"
+            android:progressTint="@color/light_blue_600" />
+
+
+        <ImageButton
+            android:id="@+id/cancel_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="5dp"
+            android:layout_weight="0.2"
+            android:scaleX= "1.3"
+            android:scaleY="1.3"
+            android:background="@null"
+            android:src="@drawable/baseline_cancel_24" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
     <TextView
         android:id="@+id/loaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Initiating..."
-        android:layout_marginBottom="10dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="15dp"
         android:gravity="center"
         android:textColor="#A9555555"
         android:fontFamily="@font/pmedium"

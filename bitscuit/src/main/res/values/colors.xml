@@ -18,4 +18,6 @@
     <color name="green">#2FFF00</color>
     <color name="red">#FF1100</color>
     <color name="grey">#979797</color>
+    <color name="bitscuitblue">#3E90BF</color>
+    <color name="bitscuitblue90">#0069E9</color>
 </resources>

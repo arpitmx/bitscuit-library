@@ -1,6 +1,7 @@
 package com.bitpolarity.bitscuit
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
@@ -57,11 +58,12 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     private lateinit var updateItem: UpdateItem
     private lateinit var bindingInclude: FragmentDownloaderBinding
+    private lateinit var appID: String
 
     companion object {
         private const val FILE_NAME = "update.apk"
         private const val REQUEST_INSTALL_PACKAGE = 1001
-        private const val TAG = "DebugLog100"
+        private const val TAG ="DebugLog100 :"
 
     }
 
@@ -87,6 +89,9 @@ class DownloadManagerActivity : AppCompatActivity() {
         binding = ActivityDownloadManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
+
+
         val bundle = intent.extras
         if (bundle!=null){
             initData(bundle)
@@ -103,10 +108,19 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     private fun setDownloadingView(){
         bindingBottomSheet.bottomTitle.text = "Downloading..."
+
+        bindingInclude.loaderText.text = "Initializing..."
+        bindingInclude.loaderText.visibility = View.VISIBLE
+
+
         bindingInclude.downloadProgress.visibility = View.VISIBLE
+        with(bindingInclude.progressCircular){
+            isIndeterminate = false
+            progress = 0
+            max = 100
+        }
+
         bindingInclude.layoutLin.visibility = View.VISIBLE
-
-
         scrollView.visibility = View.GONE
         updateBtn.visibility = View.GONE
         bindingBottomSheet.btnUpdate.visibility = View.GONE
@@ -114,6 +128,7 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     }
 
+    @SuppressLint("LongLogTag")
     fun startDownload(updateItem : UpdateItem){
 
         val filepath = "${updateItem.versionCode}/${FILE_NAME}"
@@ -124,9 +139,10 @@ class DownloadManagerActivity : AppCompatActivity() {
         if (targetFile.exists()){
             targetFile.delete()
 
-            Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
+           // Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
         }
 
+        bindingInclude.progressCircular.progress = 0
 
         disposable = fileDownloader.download(updateItem.updateUrl, targetFile)
             .throttleFirst(2, TimeUnit.SECONDS)
@@ -135,16 +151,20 @@ class DownloadManagerActivity : AppCompatActivity() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
 
+                Handler().postDelayed({
+                    bindingInclude.progressCircular.progress = it
+                    bindingInclude.downloadProgress.progress = it
+                    bindingInclude.loaderText.text = "${it}% done"
+                    Log.d(TAG, "startDownload: $it %done")
 
-                bindingInclude.downloadProgress.progress = it
-                bindingInclude.loaderText.visibility = View.VISIBLE
-                bindingInclude.loaderText.text = "Downloading ${it}% done"
+                                      },50)
                        }, {
                 Toast.makeText(this, it.localizedMessage, Toast.LENGTH_SHORT).show()
                           }, {
 
                 bindingInclude.downloadProgress.progress  =100
-                Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
+                bindingInclude.progressCircular.progress = 100
+                //Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
                 bindingInclude.loaderText.text = "Downloaded\n\nSaved at : ${targetFile.absolutePath} \n Installing now..."
                 installAPK(targetFile.absolutePath, updateItem.appID)
             })
@@ -152,82 +172,12 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
 
-    val callback = object : PackageInstaller.SessionCallback() {
-        override fun onCreated(sessionId: Int) {
-            // The session has been created
-            Log.d("TAG","session created with sessionId: $sessionId")
-        }
-
-        override fun onBadgingChanged(sessionId: Int) {
-            // The session's badging has changed
-            Log.d("TAG","session badging changed with sessionId: $sessionId")
-        }
-
-        override fun onActiveChanged(sessionId: Int, active: Boolean) {
-            // The session's active state has changed
-            Log.d("TAG","session active state changed with sessionId: $sessionId and active: $active")
-        }
-
-        override fun onProgressChanged(sessionId: Int, progress: Float) {
-            // The session's progress has changed
-            Log.d("TAG","session progress changed with sessionId: $sessionId and progress: $progress")
-        }
-
-        override fun onFinished(sessionId: Int, success: Boolean) {
-            // The session has been finished
-            if(success) {
-                Toast.makeText(applicationContext,"Done",Toast.LENGTH_SHORT).show()
-                Log.d("TAG","installation was successful for sessionId: $sessionId")
-            } else {
-                Toast.makeText(applicationContext,"Failed",Toast.LENGTH_SHORT).show()
-
-                Log.d("TAG","installation failed for sessionId: $sessionId")
-            }
-        }
-    }
-
 
 
     fun installAPK(PATH : String, appID: String) {
 
         dismissBottomSheet()
         val toInstall = File(PATH)
-
-//        val packageInstaller = this.packageManager.packageInstaller
-//        val sessionId = packageInstaller.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
-//        Log.d("TAG","Session ID : ${sessionId}")
-//        packageInstaller.registerSessionCallback(callback, Handler())
-
-
- //       val intent = Intent()
-//
-//
-//
-//
-//        val packageUri = Uri.fromFile(toInstall)
-//        val packageInstaller = packageManager.packageInstaller
-//
-//        packageInstaller.registerSessionCallback(callback, Handler())
-//
-//        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-//        val sessionId = packageInstaller.createSession(params)
-//        val session = packageInstaller.openSession(sessionId)
-//        val out = session.openWrite("update.apk", 0, -1)
-//        val input = FileInputStream(toInstall).channel
-//        val buffer = ByteBuffer.allocate(1024)
-//        while (input.read(buffer) != -1) {
-//            buffer.flip()
-//            out.write(buffer.array(), buffer.position(), buffer.remaining())
-//            buffer.clear()
-//        }
-//        session.fsync(out)
-//        input.close()
-//        out.close()
-//
-//        val pendingIntent = PendingIntent.getBroadcast(applicationContext, sessionId, intent, PendingIntent.FLAG_IMMUTABLE)
-//        session.commit(pendingIntent.intentSender)
-
-
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val apkUri = FileProvider.getUriForFile(
@@ -292,9 +242,26 @@ class DownloadManagerActivity : AppCompatActivity() {
        val changeLogTxt = bundle.getString("logs","err")
        val appID = bundle.getString("appID","err")
 
+        this.appID = appID
+        Log.d(TAG, "initData: \n URL :$url \n Version : $version \n ChangeLog : $changeLogTxt \n AppID : $appID")
+        
        this.updateItem = UpdateItem(version,url,changeLogTxt,appID)
     }
 
+
+    fun setAppIcon(appID: String){
+
+        val pm = packageManager
+
+        try {
+            val packageInfo = pm.getPackageInfo(appID, PackageManager.GET_META_DATA)
+            val appIcon = packageInfo.applicationInfo.loadIcon(pm)
+            bindingInclude.appIcon.setImageDrawable(appIcon)
+        } catch (e: PackageManager.NameNotFoundException) {
+            // App not found
+        }
+
+    }
 
     private fun setDetailBottomView(versionText : String, changeLogs : String){
         scrollView.visibility = View.VISIBLE
@@ -311,6 +278,8 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         bindingBottomSheet = UpdateBottomsheetBinding.inflate(layoutInflater)
         bindingInclude = bindingBottomSheet.include
+
+        setAppIcon(appID)
         updateBottomSheet = BottomSheetDialog(this)
 
 
@@ -319,7 +288,6 @@ class DownloadManagerActivity : AppCompatActivity() {
             setCancelable(false)
             dismissWithAnimation = true
         }
-
 
         versionTxt = bindingBottomSheet.versionTxt
         changeLog =  bindingBottomSheet.changeLogText

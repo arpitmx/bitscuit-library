@@ -8,12 +8,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Build.TAGS
 import android.os.Build.VERSION
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.lang.RuntimeException
 import java.lang.ref.WeakReference
 import java.util.logging.Logger
 import kotlin.properties.Delegates
@@ -23,12 +25,12 @@ class Bitscuit private constructor(
    val isUpdateAvailable: Boolean,
    val url: String,
    val version: String,
-   val changeLogs: String
+   val changeLogs: String,
+   val activityRef: WeakReference<Activity>,
+   val appID: String
 ) {
 
-    private lateinit var activityRef : WeakReference<Activity>
     val TAG : String = this::javaClass.name+"Debug100"
-    private lateinit var appID: String
 
 
 //    private var isUpdateAvailable by Delegates.notNull<Boolean>()
@@ -40,7 +42,6 @@ class Bitscuit private constructor(
 
 
     fun update(){
-
         val activity : Activity? = activityRef.get()
 
         if (activity!=null) {
@@ -64,10 +65,10 @@ class Bitscuit private constructor(
         @Volatile
         private lateinit var instance : Bitscuit
 
-         fun getInstance(isUpdateAvailable: Boolean, url : String, version : String , changeLogs: String ): Bitscuit {
+         fun getInstance(isUpdateAvailable: Boolean, url : String, version : String , changeLogs: String , activityRef: WeakReference<Activity>, appID: String): Bitscuit {
              synchronized(this) {
                  if (!::instance.isInitialized) {
-                     instance = Bitscuit(isUpdateAvailable,url,version,changeLogs)
+                     instance = Bitscuit(isUpdateAvailable,url,version,changeLogs,activityRef,appID)
                  }
 
              }
@@ -76,18 +77,19 @@ class Bitscuit private constructor(
      }
 
 
-    public class BitscuitBuilder{
-        private lateinit var context : Activity
+   class BitscuitBuilder{
+        private lateinit var acitivityRef : WeakReference<Activity>
         private lateinit var appID: String
         private var isUpdateAvailable by Delegates.notNull<Boolean>()
         private lateinit var url : String
         private lateinit var version : String
         private lateinit var changeLogs: String
+        private val TAG : String = this::javaClass.name
 
 
         fun scope(context: Activity, appID : String) =
             apply {
-                this.context = context
+                this.acitivityRef = WeakReference(context)
                 this.appID = appID
                 checkPermissions()
             }
@@ -104,33 +106,56 @@ class Bitscuit private constructor(
 
 
 
-        fun build() = getInstance(isUpdateAvailable,url,version,changeLogs)
-
-        fun checkPermissions(){
+        fun build() : Bitscuit{
+            return getInstance(isUpdateAvailable, url, version, changeLogs, acitivityRef, appID)
+        }
+        fun checkPermissions() {
 
             // Installing packages
-            if (VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                if (!context.packageManager.canRequestPackageInstalls()){
-                    context.startActivityForResult(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-                        .setData(Uri.parse(String.format("package: %s", context.packageName))),1)
+            if (acitivityRef.get() != null) {
+
+                val context = acitivityRef.get()
+                if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (!context!!.applicationContext.packageManager.canRequestPackageInstalls()) {
+                        context.startActivityForResult(
+                            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                                .setData(
+                                    Uri.parse(
+                                        String.format(
+                                            "package: %s",
+                                            context.packageName
+                                        )
+                                    )
+                                ), 1
+                        )
+                    }
                 }
-            }
-            // Read permissions
-            if (ContextCompat.checkSelfPermission(context, READ_EXTERNAL_STORAGE)!=
-                PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(context,
-                    arrayOf(WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE),1)
-            }
+                // Read permissions
+                if (ContextCompat.checkSelfPermission(context!!.applicationContext, READ_EXTERNAL_STORAGE) !=
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    ActivityCompat.requestPermissions(
+                        context,
+                        arrayOf(WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE), 1
+                    )
+                }
 
-            // Write permissions
-            if (ContextCompat.checkSelfPermission(context, WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+                // Write permissions
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        WRITE_EXTERNAL_STORAGE
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
 
-                ActivityCompat.requestPermissions(context, arrayOf(WRITE_EXTERNAL_STORAGE), 1)
+                    ActivityCompat.requestPermissions(context, arrayOf(WRITE_EXTERNAL_STORAGE), 1)
 
+                }
+
+            }else {
+                Log.d(TAG, "checkPermissions: Error in checking permissions")
             }
 
         }
-
     }
 
     }

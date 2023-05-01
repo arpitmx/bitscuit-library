@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -20,18 +21,27 @@
 
 
 
-    <TextView
-        android:id="@+id/bottomTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/psemibold"
-        android:text="New Update Available"
-        android:gravity="center"
-        android:paddingStart="10dp"
-        android:textColor="#DD000000"
-        android:textSize="23dp"
+        <TextView
+            android:id="@+id/bottomTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/psemibold"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:paddingStart="10dp"
+            android:text="New Update Available"
+            android:textColor="#BF000000"
+            android:textSize="20dp"
 
-        />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.445"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+
+
+
 
 
     <include
@@ -103,7 +113,7 @@
         android:layout_marginStart="25dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="25dp"
-        android:layout_marginBottom="10dp"
+        android:layout_marginBottom="15dp"
         android:background="@drawable/button_pressed"
         android:drawableTint="@color/white"
         android:elevation="5dp"
