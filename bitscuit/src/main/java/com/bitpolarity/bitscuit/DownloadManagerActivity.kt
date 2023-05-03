@@ -14,8 +14,11 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ScrollView
@@ -60,6 +63,12 @@ class DownloadManagerActivity : AppCompatActivity() {
     private lateinit var bindingInclude: FragmentDownloaderBinding
     private lateinit var appID: String
 
+    //Anim
+
+    val blinkAnimation : Animation by lazy {
+        AnimationUtils.loadAnimation(this,R.anim.blink)
+    }
+
     companion object {
         private const val FILE_NAME = "update.apk"
         private const val REQUEST_INSTALL_PACKAGE = 1001
@@ -91,10 +100,12 @@ class DownloadManagerActivity : AppCompatActivity() {
 
 
         val bundle = intent.extras
-        if (bundle!=null){
-            initData(bundle)
-            init_updateBottomSheet(updateItem)
-        }
+
+
+            if (bundle!=null){
+                initData(bundle)
+                init_updateBottomSheet(updateItem)
+            }
 
         RxJavaPlugins.setErrorHandler {
             Log.e("Error", it.localizedMessage)
@@ -109,6 +120,7 @@ class DownloadManagerActivity : AppCompatActivity() {
     @SuppressLint("LongLogTag")
     fun startDownload(updateItem : UpdateItem){
 
+
         val filepath = "${updateItem.versionCode}/${FILE_NAME}"
         targetFile = File(cacheDir , FILE_NAME)
 
@@ -117,47 +129,61 @@ class DownloadManagerActivity : AppCompatActivity() {
         if (targetFile.exists()){
             targetFile.delete()
 
-           // Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
+            // Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
         }
 
         bindingInclude.progressCircular.progress = 0
 
-        disposable = fileDownloader.download(updateItem.updateUrl, targetFile)
-            .throttleFirst(2, TimeUnit.SECONDS)
-            .toFlowable(BackpressureStrategy.LATEST)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
 
+        Handler(Looper.getMainLooper()).postDelayed({
+
+            bindingInclude.layoutProgressConstraint.startAnimation(blinkAnimation)
+            disposable = fileDownloader.download(updateItem.updateUrl, targetFile)
+                .throttleFirst(2, TimeUnit.SECONDS)
+                .toFlowable(BackpressureStrategy.LATEST)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    toggerIndefiniteProgressBarVisibility(0)
                     bindingInclude.progressCircular.progress = it
                     bindingInclude.downloadProgress.progress = it
                     bindingInclude.loaderText.text = "${it}% done"
                     Log.d(TAG, "startDownload: $it %done")
 
-                       }, {
-                Toast.makeText(this, it.localizedMessage, Toast.LENGTH_SHORT).show()
-                          }, {
+                }, {
+                    Toast.makeText(this, it.localizedMessage, Toast.LENGTH_SHORT).show()
+                }, {
+                    bindingInclude.layoutProgressConstraint.clearAnimation()
+                    bindingInclude.downloadProgress.progress  =100
+                    bindingInclude.progressCircular.progress = 100
+                    Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
+                    bindingInclude.loaderText.text = "Downloaded\n\nSaved at : ${targetFile.absolutePath} \n Installing now..."
+                    installAPK(targetFile.absolutePath, updateItem.appID)
+                })
 
-                bindingInclude.downloadProgress.progress  =100
-                bindingInclude.progressCircular.progress = 100
-                Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
-                bindingInclude.loaderText.text = "Downloaded\n\nSaved at : ${targetFile.absolutePath} \n Installing now..."
-                installAPK(targetFile.absolutePath, updateItem.appID)
-            })
 
+            bindingInclude.cancelButton.setOnClickListener{
+                disposable.dispose()
+                targetFile.delete()
+                dismissBottomSheet()
+                showFailedUpdate("Update cancelled...")
 
-        bindingInclude.cancelButton.setOnClickListener{
-            disposable.dispose()
-            targetFile.delete()
-            dismissBottomSheet()
-            showFailedUpdate("Update cancelled...")
+            }
 
-        }
-
+        },1500)
     }
 
 
+    fun toggerIndefiniteProgressBarVisibility(x:Int){
+        if (x == 1 ){
+            bindingInclude.progressCircularIndefinite.visibility  = View.VISIBLE
+            bindingInclude.progressCircular.visibility = View.GONE
+        }else {
+            bindingInclude.progressCircularIndefinite.visibility  = View.GONE
+            bindingInclude.progressCircular.visibility = View.VISIBLE
+        }
 
+    }
 
     fun installAPK(PATH : String, appID: String) {
 
@@ -247,6 +273,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         updateBottomSheet.show()
         bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
         bindingBottomSheet.bottomTitle.text = msg
+        toggerIndefiniteProgressBarVisibility(1)
 
         with(bindingBottomSheet.btnUpdate){
             text = "Retry"
@@ -273,11 +300,11 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     private fun setDownloadingView(){
         showBottomSheet()
-        bindingBottomSheet.bottomTitle.text = "Downloading..."
+        bindingBottomSheet.bottomTitle.text = "Downloading update..."
         bindingInclude.loaderText.text = "Initializing..."
         bindingInclude.loaderText.visibility = View.VISIBLE
-
         bindingInclude.progressLayout.visibility = View.VISIBLE
+        toggerIndefiniteProgressBarVisibility(1)
 
         with(bindingInclude.progressCircular){
             isIndeterminate = false
@@ -298,10 +325,9 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         bindingBottomSheet = UpdateBottomsheetBinding.inflate(layoutInflater)
         bindingInclude = bindingBottomSheet.include
-
         setAppIcon(appID)
         updateBottomSheet = BottomSheetDialog(this)
-
+        toggerIndefiniteProgressBarVisibility(1)
 
         with(updateBottomSheet) {
             setContentView(bindingBottomSheet.root)
