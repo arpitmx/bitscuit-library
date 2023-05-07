@@ -69,7 +69,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.arpitmx'
             artifactId = 'bitscuit'
-            version = '1.0.3'
+            version = '1.0.5'
 
             afterEvaluate {
                 from components.release
