@@ -81,6 +81,7 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
     private var disposable = Disposables.disposed()
     private var isDownloading = false
+    private var isDownloaded = false
 
 
     private val fileDownloader by lazy {
@@ -183,6 +184,7 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
                 }, {
 
                     isDownloading = false
+                    isDownloaded = true
                     bindingInclude.layoutProgressConstraint.clearAnimation()
                     bindingInclude.downloadProgress.progress  = 100
                     //Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
@@ -314,7 +316,10 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
     fun showFailedConnection(){
         dismissBottomSheet()
+        disposable.dispose()
         updateBottomSheet.show()
+
+        bindingBottomSheet.include.progressLayout.visibility = View.GONE
         bindingBottomSheet.include.loaderText.visibility = View.VISIBLE
         bindingBottomSheet.include.loaderText.text = "Make sure you have a stable internet connection"
         bindingBottomSheet.bottomTitle.text = "No Conection..."
@@ -325,7 +330,8 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
             setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
             setOnClickListener {
                 if(checkConnection()){
-                  init()
+                    dismissBottomSheet()
+                    init()
                 }else {
                     Toast.makeText(this@DownloadManagerActivity, "Waiting for connection...", Toast.LENGTH_SHORT).show()
                 }
@@ -357,10 +363,14 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
     private fun init_updateBottomSheet(updateItem: UpdateItem){
 
+        isDownloading = false
+        isDownloaded = false
+
         bindingBottomSheet = UpdateBottomsheetBinding.inflate(layoutInflater)
         bindingInclude = bindingBottomSheet.include
         setAppIcon(appID)
         updateBottomSheet = BottomSheetDialog(this)
+        bindingBottomSheet.include.progressLayout.visibility = View.VISIBLE
         bindingInclude.progressCircularIndefinite.visibility = View.VISIBLE
         bindingBottomSheet.scrollview.visibility = View.VISIBLE
         bindingBottomSheet.include.loaderText.visibility = View.GONE
@@ -399,7 +409,6 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
             startDownload(updateItem)
         }
         }else {
-            dismissBottomSheet()
             showFailedConnection()
             Toast.makeText(this, "Waiting for stable connection", Toast.LENGTH_SHORT).show()
         }
@@ -430,15 +439,18 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
     override fun disconnected() {
         isConnected = false
-        if (bindingInclude!=null){
+        if (bindingInclude != null) {
             bindingInclude.progressCircularIndefinite.visibility = View.VISIBLE
-            if(isDownloading){
-                showFailedUpdate("No connection!", "Make sure you have an active internet connection")
+            if (isDownloading) {
+                showFailedUpdate(
+                    "No connection!",
+                    "Make sure you have an active internet connection"
+                )
             }
-        }else {
-            showFailedUpdate("No connection!", "Make sure you have an active internet connection")
+        }
+        if (!isDownloaded) {
+            showFailedConnection()
         }
     }
-
 
 }

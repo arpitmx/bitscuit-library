@@ -27,7 +27,7 @@ class FileDownloader(
 ) {
 
     companion object {
-        private const val BUFFER_LENGTH_BYTES = 1024 * 64
+        private const val BUFFER_LENGTH_BYTES = 1024 * 8
         private const val HTTP_TIMEOUT = 30L
     }
 

@@ -7,6 +7,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkInfo
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 
@@ -56,11 +57,12 @@ class NetworkConnectivityReceiver(val call: NetworkStatusCallback) : BroadcastRe
                     val networkCapabilities = connectivityManager.getNetworkCapabilities(network)
                     if (networkCapabilities != null && networkCapabilities.hasCapability(
                             NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
-                        Toast.makeText(context, "Resumed Download", Toast.LENGTH_SHORT).show()
+                        Log.d("NetworkConnectivityReciever", "onReceive: Connected")
                         networkStatusCallback.connected()
 
                     } else {
-                        Toast.makeText(context, "Paused Download", Toast.LENGTH_SHORT).show()
+                        Log.d("NetworkConnectivityReciever", "onReceive: Disconnected")
+
                         networkStatusCallback.disconnected()
                     }
                 }
