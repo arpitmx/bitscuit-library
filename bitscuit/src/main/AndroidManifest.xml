@@ -15,8 +15,6 @@
 
     <application
         android:name="BitscuitApp"
-
-
         >
 
         <provider
@@ -31,7 +29,9 @@
 
         <activity
             android:name=".DownloadManagerActivity"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait"
+            >
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

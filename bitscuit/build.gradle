@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
 
 }
 
@@ -45,15 +46,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
     implementation 'androidx.core:core-ktx:1.10.0'
-    implementation 'com.android.volley:volley:1.2.1'
     testImplementation 'junit:junit:4.13.2'
     implementation 'com.google.android.material:material:1.10.0-alpha01'
-
-
-
-
 
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
@@ -61,5 +56,21 @@ dependencies {
 
     implementation 'androidx.core:core-ktx:1.10.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+}
+
+afterEvaluate {
+
+    publishing {
+        publications {
+
+            release (MavenPublication) {
+                from components.release
+
+                groupId = 'com.github.arpitmx'
+                artifactId = 'bitscuit'
+                version = '1.0.0'
+
+            }
+        }
+    }
 }
