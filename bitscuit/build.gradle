@@ -58,18 +58,15 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
 }
 
-afterEvaluate {
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'com.github.arpitmx'
+            artifactId = 'bitscuit'
+            version = '1.0.3'
 
-    publishing {
-        publications {
-
-            release (MavenPublication) {
+            afterEvaluate {
                 from components.release
-
-                groupId = 'com.github.arpitmx'
-                artifactId = 'bitscuit'
-                version = '1.0.2'
-
             }
         }
     }
