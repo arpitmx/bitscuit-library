@@ -38,6 +38,12 @@ android {
     }
 
 
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 
 }
 
@@ -71,3 +77,4 @@ publishing {
         }
     }
 }
+
