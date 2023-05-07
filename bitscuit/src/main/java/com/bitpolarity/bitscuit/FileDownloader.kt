@@ -1,26 +1,43 @@
 package com.bitpolarity.bitscuit
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkRequest
 import android.util.Log
+import android.widget.Toast
 import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import okhttp3.Call
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.File
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.util.concurrent.TimeUnit
 
-class FileDownloader(okHttpClient: OkHttpClient) {
+class FileDownloader(
+    private var okHttpClient: OkHttpClient,
+    private val context: Context
+) {
 
     companion object {
         private const val BUFFER_LENGTH_BYTES = 1024 * 64
         private const val HTTP_TIMEOUT = 30L
     }
 
-    private var okHttpClient: OkHttpClient
+    var isPaused = false
+
 
     init {
         val okHttpBuilder = okHttpClient.newBuilder()
-            .connectTimeout(HTTP_TIMEOUT.toLong(), TimeUnit.SECONDS)
-            .readTimeout(HTTP_TIMEOUT.toLong(), TimeUnit.SECONDS)
+            .connectTimeout(HTTP_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(HTTP_TIMEOUT, TimeUnit.SECONDS)
         this.okHttpClient = okHttpBuilder.build()
     }
 
@@ -44,12 +61,16 @@ class FileDownloader(okHttpClient: OkHttpClient) {
                             var bytesRead = inputStream.read(buffer)
                             var bytesCopied = 0L
                             while (bytesRead >= 0) {
-                                outputStream.write(buffer, 0, bytesRead)
-                                bytesCopied += bytesRead
-                                if (length > 0) {
-                                    val progress = ((bytesCopied * 100) / length).toInt()
-                                    emitter.onNext(progress)
-                                    Log.d("FileDownloader", "Progress: $progress")
+                                if (!isPaused) {
+                                    outputStream.write(buffer, 0, bytesRead)
+                                    bytesCopied += bytesRead
+                                    if (length > 0) {
+                                        val progress = ((bytesCopied * 100) / length).toInt()
+                                        emitter.onNext(progress)
+                                        Log.d("FileDownloader", "Progress: $progress")
+                                    }
+                                } else {
+                                    emitter.onNext(-1) // indicate paused state
                                 }
                                 bytesRead = inputStream.read(buffer)
                             }
@@ -62,3 +83,9 @@ class FileDownloader(okHttpClient: OkHttpClient) {
     }
 
 }
+
+
+
+
+
+

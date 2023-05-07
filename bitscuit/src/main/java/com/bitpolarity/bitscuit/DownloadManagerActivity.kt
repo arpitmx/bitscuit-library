@@ -1,16 +1,17 @@
 package com.bitpolarity.bitscuit
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.PendingIntent
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
-import android.content.IntentSender
-import android.content.pm.PackageInstaller
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.database.Cursor
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
@@ -20,16 +21,18 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.lifecycle.ViewModelProvider
 import com.bitpolarity.bitscuit.databinding.ActivityDownloadManagerBinding
 import com.bitpolarity.bitscuit.databinding.FragmentDownloaderBinding
 import com.bitpolarity.bitscuit.databinding.UpdateBottomsheetBinding
+import com.bitpolarity.bitscuit.helper.NetworkConnectivityReceiver
+import com.bitpolarity.bitscuit.helper.NetworkStatusCallback
 import com.bitpolarity.bitscuit.model.UpdateItem
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -40,14 +43,10 @@ import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 import okhttp3.OkHttpClient
 import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.channels.WritableByteChannel
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
-class DownloadManagerActivity : AppCompatActivity() {
+
+class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
     private lateinit var binding: ActivityDownloadManagerBinding
     private lateinit var updateBottomSheet: BottomSheetDialog
@@ -62,24 +61,30 @@ class DownloadManagerActivity : AppCompatActivity() {
     private lateinit var updateItem: UpdateItem
     private lateinit var bindingInclude: FragmentDownloaderBinding
     private lateinit var appID: String
+    private var isConnected: Boolean? = null
+
+    private val connectivityReceiver = NetworkConnectivityReceiver(this)
+
 
     //Anim
 
-    val blinkAnimation : Animation by lazy {
-        AnimationUtils.loadAnimation(this,R.anim.blink)
+    val blinkAnimation: Animation by lazy {
+        AnimationUtils.loadAnimation(this, R.anim.blink)
     }
 
     companion object {
         private const val FILE_NAME = "update.apk"
         private const val REQUEST_INSTALL_PACKAGE = 1001
-        private const val TAG ="DebugLog100 :"
+        private const val TAG = "DebugLog100 :"
 
     }
 
     private var disposable = Disposables.disposed()
+    private var isDownloading = false
+
 
     private val fileDownloader by lazy {
-        FileDownloader(OkHttpClient.Builder().build())
+        FileDownloader(OkHttpClient.Builder().build(), this)
     }
 
 
@@ -98,20 +103,40 @@ class DownloadManagerActivity : AppCompatActivity() {
         binding = ActivityDownloadManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
-        val bundle = intent.extras
-
-
-            if (bundle!=null){
-                initData(bundle)
-                init_updateBottomSheet(updateItem)
-            }
-
-        RxJavaPlugins.setErrorHandler {
-            Log.e("Error", it.localizedMessage)
+        
+            init()
+        
+            val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+            registerReceiver(connectivityReceiver, filter)
         }
 
-    }
+
+
+    fun init(){
+        val bundle = intent.extras
+        if (bundle != null) {
+
+            initData(bundle)
+            init_updateBottomSheet(updateItem)
+
+            RxJavaPlugins.setErrorHandler {
+                Log.e("Error", it.localizedMessage)
+            }
+    }}
+
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun checkConnection():Boolean{
+            val connectivityManager =
+                getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val network = connectivityManager.activeNetwork
+            val networkCapabilities = connectivityManager.getNetworkCapabilities(network)
+            return networkCapabilities != null && networkCapabilities.hasCapability(
+            NetworkCapabilities.NET_CAPABILITY_INTERNET
+            )
+        }
+
+
 
     lateinit var targetFile : File
 
@@ -132,20 +157,23 @@ class DownloadManagerActivity : AppCompatActivity() {
             // Toast.makeText(this, "File Exsist : ${targetFile.exists()}", Toast.LENGTH_SHORT).show()
         }
 
-        bindingInclude.progressCircular.progress = 0
-
-
         Handler(Looper.getMainLooper()).postDelayed({
 
-            bindingInclude.layoutProgressConstraint.startAnimation(blinkAnimation)
+
+
             disposable = fileDownloader.download(updateItem.updateUrl, targetFile)
                 .throttleFirst(2, TimeUnit.SECONDS)
                 .toFlowable(BackpressureStrategy.LATEST)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    toggerIndefiniteProgressBarVisibility(0)
-                    bindingInclude.progressCircular.progress = it
+
+                    isDownloading = true
+                    bindingInclude.cancelButton.isClickable = true
+                    bindingInclude.cancelButton.isEnabled = true
+
+                    bindingInclude.layoutProgressConstraint.startAnimation(blinkAnimation)
+                    bindingInclude.progressCircularIndefinite.visibility = View.GONE
                     bindingInclude.downloadProgress.progress = it
                     bindingInclude.loaderText.text = "${it}% done"
                     Log.d(TAG, "startDownload: $it %done")
@@ -153,37 +181,17 @@ class DownloadManagerActivity : AppCompatActivity() {
                 }, {
                     Toast.makeText(this, it.localizedMessage, Toast.LENGTH_SHORT).show()
                 }, {
+
+                    isDownloading = false
                     bindingInclude.layoutProgressConstraint.clearAnimation()
-                    bindingInclude.downloadProgress.progress  =100
-                    bindingInclude.progressCircular.progress = 100
-                    Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
+                    bindingInclude.downloadProgress.progress  = 100
+                    //Toast.makeText(this, "Complete Downloaded ${targetFile.absolutePath}", Toast.LENGTH_SHORT).show()
                     bindingInclude.loaderText.text = "Downloaded\n\nSaved at : ${targetFile.absolutePath} \n Installing now..."
                     installAPK(targetFile.absolutePath, updateItem.appID)
-                })
-
-
-            bindingInclude.cancelButton.setOnClickListener{
-                disposable.dispose()
-                targetFile.delete()
-                dismissBottomSheet()
-                showFailedUpdate("Update cancelled...")
-
-            }
-
-        },1500)
+                }) },
+            1500)
     }
 
-
-    fun toggerIndefiniteProgressBarVisibility(x:Int){
-        if (x == 1 ){
-            bindingInclude.progressCircularIndefinite.visibility  = View.VISIBLE
-            bindingInclude.progressCircular.visibility = View.GONE
-        }else {
-            bindingInclude.progressCircularIndefinite.visibility  = View.GONE
-            bindingInclude.progressCircular.visibility = View.VISIBLE
-        }
-
-    }
 
     fun installAPK(PATH : String, appID: String) {
 
@@ -218,18 +226,20 @@ class DownloadManagerActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_INSTALL_PACKAGE) {
-
         if (resultCode == RESULT_CANCELED) {
           //  Toast.makeText(getApplicationContext(), "Update canceled by user! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate("Update cancelled...")
+            showFailedUpdate("Update cancelled...", "Update was cancelled by user")
         } else if (resultCode == RESULT_OK) {
            // Toast.makeText(getApplicationContext(),"Update success! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+            showFailedUpdate("Updated...", "Update completed")
         } else {
            // Toast.makeText(getApplicationContext(), "Update Failed! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate("Update failed...")
+            showFailedUpdate("Update failed...", "Something went wrong")
         }
+            Log.d(TAG, "onActivityResult: $resultCode")
     }
     }
+
 
 
 
@@ -269,20 +279,28 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     }
 
-    fun showFailedUpdate(msg:String){
+    fun showFailedUpdate(title:String, msg : String){
+        bindingInclude.cancelButton.isClickable = false
+        bindingInclude.cancelButton.isEnabled = false
+
         updateBottomSheet.show()
-        bindingBottomSheet.include.loaderText.text = getString(R.string.something_went_wrong_text)
-        bindingBottomSheet.bottomTitle.text = msg
-        toggerIndefiniteProgressBarVisibility(1)
+        bindingBottomSheet.include.loaderText.text = msg
+        bindingBottomSheet.bottomTitle.text = title
+        bindingBottomSheet.include.loaderText.visibility = View.VISIBLE
+        bindingInclude.progressCircularIndefinite.visibility = View.VISIBLE
 
         with(bindingBottomSheet.btnUpdate){
             text = "Retry"
             visibility = View.VISIBLE
             setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
             setOnClickListener {
-                dismissBottomSheet()
-                setDownloadingView()
-                startDownload(updateItem)
+                if(checkConnection()){
+                    dismissBottomSheet()
+                     setDownloadingView()
+                    startDownload(updateItem)
+                }else {
+                    Toast.makeText(this@DownloadManagerActivity, "Waiting for connection...", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
@@ -292,6 +310,29 @@ class DownloadManagerActivity : AppCompatActivity() {
         }
     }
 
+
+
+    fun showFailedConnection(){
+        dismissBottomSheet()
+        updateBottomSheet.show()
+        bindingBottomSheet.include.loaderText.visibility = View.VISIBLE
+        bindingBottomSheet.include.loaderText.text = "Make sure you have a stable internet connection"
+        bindingBottomSheet.bottomTitle.text = "No Conection..."
+        bindingBottomSheet.scrollview.visibility = View.GONE
+        with(bindingBottomSheet.btnUpdate){
+            text = "Retry"
+            visibility = View.VISIBLE
+            setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,R.drawable.baseline_replay_24,0)
+            setOnClickListener {
+                if(checkConnection()){
+                  init()
+                }else {
+                    Toast.makeText(this@DownloadManagerActivity, "Waiting for connection...", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+    }
 
     fun showBottomSheet(){
         dismissBottomSheet()
@@ -304,16 +345,9 @@ class DownloadManagerActivity : AppCompatActivity() {
         bindingInclude.loaderText.text = "Initializing..."
         bindingInclude.loaderText.visibility = View.VISIBLE
         bindingInclude.progressLayout.visibility = View.VISIBLE
-        toggerIndefiniteProgressBarVisibility(1)
-
-        with(bindingInclude.progressCircular){
-            isIndeterminate = false
-            progress = 0
-            max = 100
-        }
+        bindingInclude.progressCircularIndefinite.visibility = View.VISIBLE
 
         bindingInclude.layoutLin.visibility = View.VISIBLE
-
 
         scrollView.visibility = View.GONE
         updateBtn.visibility = View.GONE
@@ -327,7 +361,9 @@ class DownloadManagerActivity : AppCompatActivity() {
         bindingInclude = bindingBottomSheet.include
         setAppIcon(appID)
         updateBottomSheet = BottomSheetDialog(this)
-        toggerIndefiniteProgressBarVisibility(1)
+        bindingInclude.progressCircularIndefinite.visibility = View.VISIBLE
+        bindingBottomSheet.scrollview.visibility = View.VISIBLE
+        bindingBottomSheet.include.loaderText.visibility = View.GONE
 
         with(updateBottomSheet) {
             setContentView(bindingBottomSheet.root)
@@ -340,15 +376,32 @@ class DownloadManagerActivity : AppCompatActivity() {
         updateBtn =  bindingBottomSheet.btnUpdate
         scrollView = bindingBottomSheet.scrollview
 
+
         setDetailBottomView(updateItem.versionCode,updateItem.logs)
 
         updateBottomSheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         updateBottomSheet.show()
+        bindingInclude.cancelButton.isClickable = false
+        bindingInclude.cancelButton.isEnabled = false
 
-        updateBtn.setOnClickListener{
 
+        bindingInclude.cancelButton.setOnClickListener{
+
+            disposable.dispose()
+            targetFile.delete()
+            dismissBottomSheet()
+            showFailedUpdate("Update cancelled...","Update was cancelled")
+        }
+
+        if (checkConnection()){
+            updateBtn.setOnClickListener{
             setDownloadingView()
             startDownload(updateItem)
+        }
+        }else {
+            dismissBottomSheet()
+            showFailedConnection()
+            Toast.makeText(this, "Waiting for stable connection", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -363,10 +416,29 @@ class DownloadManagerActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         disposable.dispose()
+        unregisterReceiver(connectivityReceiver)
         dismissBottomSheet()
     }
 
 
+    override fun connected() {
+       isConnected = true
+        if (bindingInclude!=null){
+            bindingInclude.progressCircularIndefinite.visibility = View.GONE
+        }
+    }
+
+    override fun disconnected() {
+        isConnected = false
+        if (bindingInclude!=null){
+            bindingInclude.progressCircularIndefinite.visibility = View.VISIBLE
+            if(isDownloading){
+                showFailedUpdate("No connection!", "Make sure you have an active internet connection")
+            }
+        }else {
+            showFailedUpdate("No connection!", "Make sure you have an active internet connection")
+        }
+    }
 
 
 }
