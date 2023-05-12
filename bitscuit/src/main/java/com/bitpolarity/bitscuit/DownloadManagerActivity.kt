@@ -103,13 +103,16 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
         super.onCreate(savedInstanceState)
         binding = ActivityDownloadManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        binding.progressBar.visibility = View.VISIBLE
 
-        
+
+        Handler().postDelayed({
             init()
-        
-            val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
             registerReceiver(connectivityReceiver, filter)
-        }
+        },1000)
+
+    }
 
 
 
@@ -123,19 +126,19 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
             RxJavaPlugins.setErrorHandler {
                 Log.e("Error", it.localizedMessage)
             }
-    }}
+        }}
 
 
     @RequiresApi(Build.VERSION_CODES.M)
     fun checkConnection():Boolean{
-            val connectivityManager =
-                getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val network = connectivityManager.activeNetwork
-            val networkCapabilities = connectivityManager.getNetworkCapabilities(network)
-            return networkCapabilities != null && networkCapabilities.hasCapability(
+        val connectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(network)
+        return networkCapabilities != null && networkCapabilities.hasCapability(
             NetworkCapabilities.NET_CAPABILITY_INTERNET
-            )
-        }
+        )
+    }
 
 
 
@@ -228,32 +231,33 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_INSTALL_PACKAGE) {
-        if (resultCode == RESULT_CANCELED) {
-          //  Toast.makeText(getApplicationContext(), "Update canceled by user! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate("Update cancelled...", "Update was cancelled by user")
-        } else if (resultCode == RESULT_OK) {
-           // Toast.makeText(getApplicationContext(),"Update success! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate("Updated...", "Update completed")
-        } else {
-           // Toast.makeText(getApplicationContext(), "Update Failed! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
-            showFailedUpdate("Update failed...", "Something went wrong")
-        }
+            if (resultCode == RESULT_CANCELED) {
+                //  Toast.makeText(getApplicationContext(), "Update canceled by user! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+                showFailedUpdate("Update cancelled...", "Update was cancelled by user")
+            } else if (resultCode == RESULT_OK) {
+                // Toast.makeText(getApplicationContext(),"Update success! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+                showFailedUpdate("Updated...", "Update completed")
+            } else {
+                // Toast.makeText(getApplicationContext(), "Update Failed! Result Code: " + resultCode, Toast.LENGTH_LONG).show();
+                showFailedUpdate("Update failed...", "Something went wrong")
+            }
             Log.d(TAG, "onActivityResult: $resultCode")
-    }
+        }
     }
 
 
 
 
     fun initData(bundle: Bundle){
-       val version = bundle.getString("version","err")
-       val url = bundle.getString("updateUrl","err")
-       val changeLogTxt = bundle.getString("logs","err")
-       val appID = bundle.getString("appID","err")
+
+        val version = bundle.getString("version","err")
+        val url = bundle.getString("updateUrl","err")
+        val changeLogTxt = bundle.getString("logs","err")
+        val appID = bundle.getString("appID","err")
         this.appID = appID
         Log.d(TAG, "initData: \n URL :$url \n Version : $version \n ChangeLog : $changeLogTxt \n AppID : $appID")
-        
-       this.updateItem = UpdateItem(version,url,changeLogTxt,appID)
+
+        this.updateItem = UpdateItem(version,url,changeLogTxt,appID)
     }
 
 
@@ -298,7 +302,7 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
             setOnClickListener {
                 if(checkConnection()){
                     dismissBottomSheet()
-                     setDownloadingView()
+                    setDownloadingView()
                     startDownload(updateItem)
                 }else {
                     Toast.makeText(this@DownloadManagerActivity, "Waiting for connection...", Toast.LENGTH_SHORT).show()
@@ -363,6 +367,8 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
     private fun init_updateBottomSheet(updateItem: UpdateItem){
 
+        binding.progressBar.visibility = View.GONE
+
         isDownloading = false
         isDownloaded = false
 
@@ -379,6 +385,10 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
             setContentView(bindingBottomSheet.root)
             setCancelable(false)
             dismissWithAnimation = true
+
+            val window= updateBottomSheet.window!!
+            window.setWindowAnimations(R.style.DialogAnimation_SlideAnimation)
+
         }
 
         versionTxt = bindingBottomSheet.versionTxt
@@ -405,9 +415,9 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
         if (checkConnection()){
             updateBtn.setOnClickListener{
-            setDownloadingView()
-            startDownload(updateItem)
-        }
+                setDownloadingView()
+                startDownload(updateItem)
+            }
         }else {
             showFailedConnection()
             Toast.makeText(this, "Waiting for stable connection", Toast.LENGTH_SHORT).show()
@@ -431,7 +441,7 @@ class DownloadManagerActivity : AppCompatActivity(),NetworkStatusCallback {
 
 
     override fun connected() {
-       isConnected = true
+        isConnected = true
         if (bindingInclude!=null){
             bindingInclude.progressCircularIndefinite.visibility = View.GONE
         }
