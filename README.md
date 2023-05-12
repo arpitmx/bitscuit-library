@@ -21,8 +21,7 @@ bitscuit is hosted at  <a href="https://jitpack.io/#arpitmx/bitscuit/1.0.5">Jitp
 
 Installing bistcuit is very simple , you can install bitscuit using github release by downloading the latest jar file  
 
-
-or use Gradle 
+### Using Gradle 
 
 #### Step 1 : Use this in build.gradle(module: project)
 ```gradle
@@ -38,6 +37,25 @@ or use Gradle
  dependencies {
 	    implementation 'com.github.arpitmx:bitscuit:1.0.5'
 	}
+```
+
+### Using Maven
+
+```xml
+<repositories>
+	<repository>
+		<id>jitpack.io</id>
+		<url>https://jitpack.io</url>
+	</repository>
+</repositories>
+```
+
+```xml
+<dependency>
+ 	<groupId>com.github.arpitmx</groupId>
+	<artifactId>bitscuit</artifactId>
+	<version>1.0.6</version>
+</dependency>
 ```
 
 Do not forget to add internet permission in manifest if already not present
