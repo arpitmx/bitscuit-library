@@ -1,6 +1,5 @@
-[![](https://jitpack.io/v/arpitmx/bitscuit.svg)](https://jitpack.io/#arpitmx/bitscuit)
+# bitscuit 🍪  [![](https://jitpack.io/v/arpitmx/bitscuit.svg)](https://jitpack.io/#arpitmx/bitscuit)
 
-# bitscuit 🍪
 bitscuit updater is an android library which the developers can hook into their project and use it to update their apps in just 3 lines of code.
 
 bitscuit is hosted at  <a href="https://jitpack.io/#arpitmx/bitscuit/1.0.5">Jitpack repository</a>
