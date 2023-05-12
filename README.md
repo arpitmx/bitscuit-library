@@ -91,8 +91,7 @@ Do not forget to add internet permission in manifest if already not present
 
 
 // Use the buitscuit builder to create the bitscuit instance 
-val bitscuit = Bitscuit.BitscuitBuilder()
-                    .scope(context = this, appID = this.packageName)
+val bitscuit = Bitscuit.BitscuitBuilder(this)
                     .config(url = updatedURL,version="1.0.1",changeLogs="Change logs..")
                     .build() 
   
