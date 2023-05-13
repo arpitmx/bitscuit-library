@@ -11,6 +11,7 @@ bitscuit is suited for those application :
 - Apps which aren't hosted on any store like google play store
 - Distributing updates apps to testers
 - Apps which have more frequent updates cause app stores like playstore takes a lot of time (1-2 day) for verification of each update  
+- For minor upgrades in the app
 
 
 ## Features
