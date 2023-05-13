@@ -129,7 +129,7 @@ val bitscuit = Bitscuit.BitscuitBuilder(this)
 ```
 
 ## Contributing to bitscuit
-All pull requests are welcome, make sure to follow the [contribution guidelines](CONTRIBUTING.md)
+All pull requests are welcome, make sure to follow the [contribution guidelines](Contribution.md)
 when you submit pull request.
 ## Links
 [![portfolio](https://img.shields.io/badge/my_portfolio-000?style=for-the-badge&logo=ko-fi&logoColor=white)](https://github.com/arpitmx/)
