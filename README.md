@@ -1,17 +1,22 @@
 # bitscuit 🍪  [![](https://jitpack.io/v/arpitmx/bitscuit.svg)](https://jitpack.io/#arpitmx/bitscuit)
 
-bitscuit updater is an android library which the developers can hook into their project and use it to update their apps in just 3 lines of code.
-
-bitscuit is hosted at  <a href="https://jitpack.io/#arpitmx/bitscuit/1.0.5">Jitpack repository</a>
+bitscuit updater is an android library which the developers can hook into their project and use it to update their apps in just 3 lines of code. bitscuit is hosted at  <a href="https://jitpack.io/#arpitmx/bitscuit/1.0.5">Jitpack repository</a>
 
 ![Logo](https://github.com/arpitmx/bitscuit/assets/59350776/4b40f173-7f7c-4357-b0a0-43b7a6cb5733)
+
+
+
+## Applications 
+bitscuit is suited for those application :
+- Apps which aren't hosted on any store like google play store
+- Distributing updates apps to testers
+- Apps which have more frequent updates cause app stores like playstore takes a lot of time (1-2 day) for verification of each update  
 
 
 ## Features
 
 
 <br><img src="https://github.com/arpitmx/bitscuit/assets/59350776/77c7d735-1c1c-40e4-bb77-1f10c8a4c9c2" width="350"><br><br>
-
 
 
 - **Easy integration** : bitscuit can be easily integrated into any Android app with just three lines of code, handles permissions, configurations, version comparisions,etc. saving developers valuable time and effort, why recreating the wheel? right.
@@ -29,6 +34,7 @@ bitscuit is hosted at  <a href="https://jitpack.io/#arpitmx/bitscuit/1.0.5">Jitp
 
 
 - **Error handling** : bitscuit handles errors and edge cases like connection problems gracefully, ensuring that the update process is as smooth and error-free as possible for both developers and users.
+
 
 ## Installation
 
