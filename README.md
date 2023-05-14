@@ -51,7 +51,25 @@ Installing bistcuit is very simple , you can install bitscuit using github relea
 			maven { url 'https://jitpack.io' }
 		}
 	}
+
+//For Gradle 7.0 and above add 'maven { url 'https://jitpack.io' }' in settings.gradle file
+
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+
 ```
+
+
+
+
 #### Step 2 : Use this in build.gradle(module: app)
 ```gradle
  dependencies {
