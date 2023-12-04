@@ -35,6 +35,33 @@ bitscuit is suited for those application :
 - **Error handling** : bitscuit handles errors and edge cases like connection problems gracefully, ensuring that the update process is as smooth and error-free as possible for both developers and users.
 
 
+
+## Sample usage 
+
+```kotlin
+ ...
+
+//This data can be fetched from your database 
+ val url = "https://example.com/update.apk"
+ val latestVersion = "1.0.1"
+ val changeLogs = "Change logs..."
+
+
+// Use the buitscuit builder to create the bitscuit instance 
+val bitscuit = Bitscuit.BitscuitBuilder(this)
+                    .config(url = updatedURL,version="1.0.1",changeLogs="Change logs..")
+                    .build() 
+  
+       
+// Use the listenUpdate() function to start listening for updates 
+  bitscuit.listenUpdate()   
+
+ ...                 
+                    
+```
+
+
+
 ## Installation
 
 Installing bistcuit is very simple , you can install bitscuit using github release by downloading the latest jar file  
@@ -99,32 +126,6 @@ Do not forget to add internet permission in manifest if already not present
 <uses-permission android:name="android.permission.INTERNET" />
 ```
 
-
-
-    
-## Sample usage 
-
-```kotlin
- ...
-
-//This data can be fetched from your database 
- val url = "https://example.com/update.apk"
- val latestVersion = "1.0.1"
- val changeLogs = "Change logs..."
-
-
-// Use the buitscuit builder to create the bitscuit instance 
-val bitscuit = Bitscuit.BitscuitBuilder(this)
-                    .config(url = updatedURL,version="1.0.1",changeLogs="Change logs..")
-                    .build() 
-  
-       
-// Use the listenUpdate() function to start listening for updates 
-  bitscuit.listenUpdate()   
-
- ...                 
-                    
-```
 ## License
 ```
    Copyright (C) 2023 Alok Ranjan
