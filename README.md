@@ -16,23 +16,31 @@ bitscuit is suited for those application :
 
 ## Features
 
-<br><img src="https://github.com/arpitmx/bitscuit/assets/59350776/77c7d735-1c1c-40e4-bb77-1f10c8a4c9c2" width="350"><br><br>
 
 
 - **Easy integration** : bitscuit can be easily integrated into any Android app with just three lines of code, handles permissions, configurations, version comparisions,etc. saving developers valuable time and effort, why recreating the wheel? right.
-<br><br>
-<p float="left">
-<img src="https://github.com/arpitmx/bitscuit/assets/59350776/8c58fc11-fe35-4be0-90cd-cc7d9101ec8a)" width="350">
-</p><br><br>
+
+<br><img src="https://github.com/arpitmx/bitscuit/assets/59350776/77c7d735-1c1c-40e4-bb77-1f10c8a4c9c2" width="350"><br><br>
+
+
 
 
 - **Seamless updates** : bitscuit ensures that app updates happen seamlessly, without interrupting user experience or requiring the user to manually update the app.
 
 <br><br>
-<img src="https://github.com/arpitmx/bitscuit/assets/59350776/a703cc37-19e0-4e33-9214-bb744fec87cb" width="350"><br><br>
+<p float="left">
+<img src="https://github.com/arpitmx/bitscuit/assets/59350776/8c58fc11-fe35-4be0-90cd-cc7d9101ec8a)" width="350">
+</p><br><br>
+
+![gifdown](https://github.com/arpitmx/bitscuit-library/assets/59350776/65156a30-611e-493a-931d-e4be823cfbfb)
 
 
 - **Error handling** : bitscuit handles errors and edge cases like connection problems gracefully, ensuring that the update process is as smooth and error-free as possible for both developers and users.
+
+<br><br>
+<img src="https://github.com/arpitmx/bitscuit/assets/59350776/a703cc37-19e0-4e33-9214-bb744fec87cb" width="350"><br><br>
+
+<img src="https://github.com/arpitmx/bitscuit-library/assets/59350776/10173f9a-00cc-43b3-98bd-31ed153978ac" width="350"><br><br>
 
 
 
