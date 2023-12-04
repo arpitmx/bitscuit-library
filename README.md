@@ -41,15 +41,9 @@ bitscuit is suited for those application :
 ```kotlin
  ...
 
-//This data can be fetched from your database 
- val url = "https://example.com/update.apk"
- val latestVersion = "1.0.1"
- val changeLogs = "Change logs..."
-
-
 // Use the buitscuit builder to create the bitscuit instance 
 val bitscuit = Bitscuit.BitscuitBuilder(this)
-                    .config(url = updatedURL,version="1.0.1",changeLogs="Change logs..")
+                    .config(url = _UPDATE_URL_ ,version=_LATEST_VERSION_ , changeLogs=_CHANGE_LOGS_ )
                     .build() 
   
        
